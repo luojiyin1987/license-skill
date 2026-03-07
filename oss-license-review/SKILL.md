@@ -40,9 +40,10 @@ Always inspect at least:
 - `package-lock.json` for dependency license hints (if present)
 - `sbom.json`, `cyclonedx.json`, `spdx.json`, `*.spdx.json` (if present)
 
-The script evaluates SPDX expressions (`AND` / `OR` / `WITH` / parentheses), models known GPL linking exceptions in risk scoring (including version-compatibility checks), and reports branch risk range (`min..max`).
+The script evaluates SPDX expressions (`AND` / `OR` / `WITH` / parentheses), models a broad SPDX exception map (40+ entries) in risk scoring, and performs exception/base-license compatibility checks.
+It reports branch risk range (`min..max`) and warnings when exception compatibility is uncertain.
 For very complex expressions, evaluation applies depth/branch limits and reports truncation warnings.
-For large SBOM files, the parser uses streaming mode when optional `ijson` is available.
+For large SBOM files, the parser uses streaming mode when optional `ijson` is available, and falls back to full JSON parsing on stream failure.
 
 ## Step 2: Classify License Type and Risk
 
