@@ -69,6 +69,7 @@ Use this reference to convert detected licenses into practical obligations.
 - For `WITH` exceptions, keep the exact exception text in compliance records.
 - Known linking exceptions (e.g., `Classpath-exception-2.0`) may reduce GPL branch risk, but do not remove all obligations.
 - Check that the exception is compatible with the GPL version in the same branch (e.g., some exceptions are GPL-2.0-only oriented).
+- Use the built-in exception map as a first-pass check, but manually verify uncommon exceptions.
 - If expression evaluation yields different risk branches, report both `minimum` and `maximum` risk until branch selection is fixed.
 - If expression evaluation is truncated due to branch explosion, treat result as conservative and perform manual review.
 
@@ -78,6 +79,7 @@ Use this reference to convert detected licenses into practical obligations.
 - Include `evidence.licenses` when present, not only top-level `licenses`.
 - Keep `bomFormat` and `specVersion` in compliance artifacts for traceability.
 - Prefer streaming parsing for very large SBOMs to reduce memory pressure.
+- If streaming fails, fall back to full parsing and report parse mode for traceability.
 
 ## Respect and Give-Back Practices
 
