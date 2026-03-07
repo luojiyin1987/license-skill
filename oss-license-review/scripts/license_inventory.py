@@ -81,17 +81,82 @@ COPYLEFT_EXCEPTIONS_REDUCE_RISK = {
     "CLASSPATH-EXCEPTION-2.0",
     "BOOTLOADER-EXCEPTION",
     "BISON-EXCEPTION-2.2",
+    "ASTERISK-EXCEPTION",
+    "AUTOCONF-EXCEPTION-2.0",
+    "AUTOCONF-EXCEPTION-3.0",
+    "AUTOCONF-EXCEPTION-GENERIC",
+    "CLISP-EXCEPTION-2.0",
+    "DIGIRULE-FOSS-EXCEPTION",
+    "ECOS-EXCEPTION-2.0",
+    "FAWKES-RUNTIME-EXCEPTION",
+    "FLTK-EXCEPTION",
+    "FREERTOS-EXCEPTION-2.0",
     "GCC-EXCEPTION-2.0",
     "GCC-EXCEPTION-3.1",
+    "I2P-GPL-JAVA-EXCEPTION",
+    "LIBTOOL-EXCEPTION",
+    "LLVM-EXCEPTION",
+    "OCAML-LGPL-LINKING-EXCEPTION",
+    "OPENJDK-ASSEMBLY-EXCEPTION-1.0",
+    "OPENVPN-OPENSSL-EXCEPTION",
+    "QT-GPL-EXCEPTION-1.0",
+    "QT-LGPL-EXCEPTION-1.1",
+    "U-BOOT-EXCEPTION-2.0",
+    "WXWINDOWS-EXCEPTION-3.1",
     "LLVM-EXCEPTION",
     "OPENSSL-EXCEPTION",
 }
+GPL2_FAMILY = {"GPL", "GPL-2.0", "GPL-2.0-ONLY", "GPL-2.0-OR-LATER"}
+GPL3_FAMILY = {"GPL", "GPL-3.0", "GPL-3.0-ONLY", "GPL-3.0-OR-LATER"}
+GPL_ANY_FAMILY = GPL2_FAMILY | GPL3_FAMILY
+LGPL2_FAMILY = {"LGPL", "LGPL-2.1", "LGPL-2.1-OR-LATER"}
+LGPL3_FAMILY = {"LGPL", "LGPL-3.0", "LGPL-3.0-OR-LATER"}
+LGPL_ANY_FAMILY = LGPL2_FAMILY | LGPL3_FAMILY
+COPYLEFT_ANY_FAMILY = GPL_ANY_FAMILY | LGPL_ANY_FAMILY
 EXCEPTION_GPL_COMPATIBILITY = {
-    "CLASSPATH-EXCEPTION-2.0": {"GPL-2.0", "GPL-2.0-ONLY", "GPL-2.0-OR-LATER"},
-    "BOOTLOADER-EXCEPTION": {"GPL-2.0", "GPL-2.0-ONLY", "GPL-2.0-OR-LATER"},
-    "BISON-EXCEPTION-2.2": {"GPL-2.0", "GPL-2.0-ONLY", "GPL-2.0-OR-LATER"},
-    "GCC-EXCEPTION-2.0": {"GPL-2.0", "GPL-2.0-ONLY", "GPL-2.0-OR-LATER"},
-    "GCC-EXCEPTION-3.1": {"GPL-3.0", "GPL-3.0-ONLY", "GPL-3.0-OR-LATER"},
+    "389-EXCEPTION": GPL_ANY_FAMILY,
+    "ASTERISK-EXCEPTION": GPL2_FAMILY,
+    "AUTOCONF-EXCEPTION-2.0": GPL2_FAMILY,
+    "AUTOCONF-EXCEPTION-3.0": GPL3_FAMILY,
+    "AUTOCONF-EXCEPTION-GENERIC": GPL_ANY_FAMILY,
+    "BISON-EXCEPTION-2.2": GPL2_FAMILY,
+    "BOOTLOADER-EXCEPTION": GPL2_FAMILY,
+    "CLASSPATH-EXCEPTION-2.0": GPL2_FAMILY,
+    "CLISP-EXCEPTION-2.0": GPL2_FAMILY,
+    "DIGIRULE-FOSS-EXCEPTION": GPL_ANY_FAMILY,
+    "ECOS-EXCEPTION-2.0": GPL_ANY_FAMILY,
+    "FAWKES-RUNTIME-EXCEPTION": GPL_ANY_FAMILY,
+    "FLTK-EXCEPTION": LGPL_ANY_FAMILY,
+    "FONT-EXCEPTION-2.0": GPL_ANY_FAMILY,
+    "FREERTOS-EXCEPTION-2.0": GPL_ANY_FAMILY,
+    "GCC-EXCEPTION-2.0": GPL2_FAMILY,
+    "GCC-EXCEPTION-3.1": GPL3_FAMILY,
+    "GMSH-EXCEPTION": GPL_ANY_FAMILY,
+    "GNAT-EXCEPTION": GPL_ANY_FAMILY,
+    "GNUPLOT-EXCEPTION": GPL_ANY_FAMILY,
+    "I2P-GPL-JAVA-EXCEPTION": GPL_ANY_FAMILY,
+    "KIWI-EXCEPTION": GPL_ANY_FAMILY,
+    "LIBTOOL-EXCEPTION": GPL_ANY_FAMILY,
+    "LINUX-SYSCALL-NOTE": GPL_ANY_FAMILY,
+    "LLVM-EXCEPTION": GPL_ANY_FAMILY,
+    "LZMA-EXCEPTION": GPL_ANY_FAMILY,
+    "MIF-EXCEPTION": GPL_ANY_FAMILY,
+    "NOKIA-QT-EXCEPTION-1.1": LGPL_ANY_FAMILY,
+    "OCAML-LGPL-LINKING-EXCEPTION": LGPL_ANY_FAMILY,
+    "OCCT-EXCEPTION-1.0": LGPL_ANY_FAMILY,
+    "OPENJDK-ASSEMBLY-EXCEPTION-1.0": GPL2_FAMILY,
+    "OPENVPN-OPENSSL-EXCEPTION": GPL_ANY_FAMILY,
+    "OPENSSL-EXCEPTION": GPL_ANY_FAMILY,
+    "PS-OR-PDF-FONT-EXCEPTION-20170817": GPL_ANY_FAMILY,
+    "QT-GPL-EXCEPTION-1.0": GPL_ANY_FAMILY,
+    "QT-LGPL-EXCEPTION-1.1": LGPL_ANY_FAMILY,
+    "QWT-EXCEPTION-1.0": LGPL_ANY_FAMILY,
+    "SHL-2.0": COPYLEFT_ANY_FAMILY,
+    "SHL-2.1": COPYLEFT_ANY_FAMILY,
+    "SWIFT-EXCEPTION": GPL_ANY_FAMILY,
+    "U-BOOT-EXCEPTION-2.0": GPL2_FAMILY,
+    "UNIVERSAL-FOSS-EXCEPTION-1.0": GPL_ANY_FAMILY,
+    "WXWINDOWS-EXCEPTION-3.1": GPL_ANY_FAMILY,
 }
 
 LICENSE_TEXT_PATTERNS = [
@@ -326,18 +391,21 @@ def classify_tokens_risk(tokens: set[str]) -> str:
     return "medium"
 
 
-def collect_gpl_tokens(tokens: set[str]) -> set[str]:
+def collect_copyleft_base_tokens(tokens: set[str]) -> set[str]:
     return {
         token
         for token in tokens
-        if token == "GPL" or token.startswith("GPL-")
+        if token == "GPL"
+        or token.startswith("GPL-")
+        or token == "LGPL"
+        or token.startswith("LGPL-")
     }
 
 
 def assess_exception_compatibility(
     licenses: set[str], exceptions: set[str]
 ) -> tuple[set[str], list[str]]:
-    gpl_tokens = collect_gpl_tokens(licenses)
+    base_tokens = collect_copyleft_base_tokens(licenses)
     applicable = set()
     warnings = []
     for exception in exceptions:
@@ -347,16 +415,16 @@ def assess_exception_compatibility(
                 f"Exception '{exception}' is not in the built-in compatibility map; verify manually."
             )
             continue
-        if not gpl_tokens:
+        if not base_tokens:
             warnings.append(
-                f"Exception '{exception}' appears without a GPL base license in the same branch."
+                f"Exception '{exception}' appears without a GPL/LGPL base license in the same branch."
             )
             continue
-        if gpl_tokens & compat:
+        if base_tokens & compat:
             applicable.add(exception)
         else:
             warnings.append(
-                f"Exception '{exception}' may be incompatible with GPL tokens: {', '.join(sorted(gpl_tokens))}."
+                f"Exception '{exception}' may be incompatible with base tokens: {', '.join(sorted(base_tokens))}."
             )
     return applicable, warnings
 
@@ -911,21 +979,29 @@ def build_sbom_declared_result(
     return result
 
 
+def should_collect_streaming_string(prefix: str) -> bool:
+    parts = [part.lower() for part in prefix.split(".") if part]
+    if not parts:
+        return False
+    last = parts[-1]
+    if last in {"licensedeclared", "licenseconcluded", "licenseexpression"}:
+        return True
+    has_license_context = any(
+        part in {"license", "licenses", "licence", "licences"} for part in parts
+    )
+    if has_license_context and last in {"expression", "id", "name", "license", "value"}:
+        return True
+    if "licenseinfoinfiles" in parts and last in {"licenseid", "licenseinfoinfile"}:
+        return True
+    return False
+
+
 def parse_sbom_json_streaming(path: Path) -> dict:
     if ijson is None:
         return {}
     values: list[str] = []
     bom_format = None
     spec_version = None
-    license_suffixes = (
-        ".licenses.item.expression",
-        ".licenses.item.license.id",
-        ".licenses.item.license.name",
-        ".licenses.item.license",
-        ".licenseDeclared",
-        ".licenseConcluded",
-        ".licenseExpression",
-    )
     try:
         with path.open("rb") as handle:
             for prefix, event, value in ijson.parse(handle):
@@ -937,7 +1013,7 @@ def parse_sbom_json_streaming(path: Path) -> dict:
                 if prefix == "specVersion":
                     spec_version = value
                     continue
-                if prefix.endswith(license_suffixes):
+                if should_collect_streaming_string(prefix):
                     if value.strip():
                         values.append(value.strip())
     except Exception:
@@ -966,7 +1042,8 @@ def parse_sbom_json(path: Path) -> dict:
             return streamed
 
     try:
-        data = json.loads(read_text(path))
+        with path.open("rb") as handle:
+            data = json.load(handle)
     except Exception:
         return {}
 
