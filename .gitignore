@@ -1,0 +1,19 @@
+# Secrets / runtime state
+auth.json
+history.jsonl
+sessions/
+log/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Local reference clone
+Open-Source-License-filter-ref/
+
+# OS/editor
+.DS_Store
+.idea/
+.vscode/
