@@ -1,0 +1,4 @@
+interface:
+  display_name: "OSS License Review"
+  short_description: "Analyze open-source license obligations and risks"
+  default_prompt: "Use $oss-license-review to analyze this repository license obligations and compliance risks."
