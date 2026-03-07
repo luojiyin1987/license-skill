@@ -87,6 +87,13 @@ class LicenseInventoryTests(unittest.TestCase):
         self.assertTrue(result["exception_compatibility_warnings"])
         self.assertEqual(result["applicable_exceptions"], [])
 
+    def test_spdx_exception_mapping_bootloader_compatible_with_gpl2(self):
+        result = li.evaluate_spdx_expression("GPL-2.0-only WITH Bootloader-exception")
+        self.assertTrue(result["valid"])
+        self.assertEqual(result["min_risk"], "medium")
+        self.assertEqual(result["max_risk"], "medium")
+        self.assertIn("BOOTLOADER-EXCEPTION", result["applicable_exceptions"])
+
     def test_spdx_branch_explosion_is_truncated(self):
         parts = [f"(LIC{i}A OR LIC{i}B)" for i in range(8)]
         expr = " AND ".join(parts)  # 2^8 unique branches > MAX_SPDX_BRANCHES
@@ -149,6 +156,44 @@ class LicenseInventoryTests(unittest.TestCase):
             self.assertEqual(declared["spec_version"], "1.5")
             self.assertIn(declared["parse_mode"], {"full", "stream"})
             self.assertIn("AGPL-3.0-ONLY", report["high_copyleft_alerts"])
+
+    def test_streaming_path_matcher_is_expanded(self):
+        self.assertTrue(
+            li.should_collect_streaming_string(
+                "metadata.component.evidence.licenses.item.license.id"
+            )
+        )
+        self.assertTrue(
+            li.should_collect_streaming_string("components.item.licenses.item.expression")
+        )
+        self.assertFalse(li.should_collect_streaming_string("components.item.name"))
+
+    def test_streaming_failure_falls_back_to_full_parse(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo = Path(temp_dir)
+            sbom = {
+                "bomFormat": "CycloneDX",
+                "specVersion": "1.5",
+                "components": [{"licenses": [{"expression": "MIT OR Apache-2.0"}]}],
+            }
+            sbom_path = repo / "sbom.json"
+            sbom_path.write_text(json.dumps(sbom), encoding="utf-8")
+
+            original_ijson = li.ijson
+            original_threshold = li.SBOM_STREAMING_THRESHOLD_BYTES
+            original_stream_fn = li.parse_sbom_json_streaming
+            try:
+                li.ijson = object()
+                li.SBOM_STREAMING_THRESHOLD_BYTES = 1
+                li.parse_sbom_json_streaming = lambda _: {}
+                declared = li.parse_sbom_json(sbom_path)
+            finally:
+                li.ijson = original_ijson
+                li.SBOM_STREAMING_THRESHOLD_BYTES = original_threshold
+                li.parse_sbom_json_streaming = original_stream_fn
+
+            self.assertEqual(declared["parse_mode"], "full")
+            self.assertEqual(declared["bom_format"], "CycloneDX")
 
 
 if __name__ == "__main__":
