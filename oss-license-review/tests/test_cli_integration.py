@@ -44,7 +44,7 @@ class LicenseInventoryCliIntegrationTests(unittest.TestCase):
                 text=True,
             )
             self.assertEqual(proc.returncode, 0, msg=proc.stderr)
-            self.assertIn("may be incompatible with GPL tokens", proc.stdout)
+            self.assertIn("may be incompatible with base tokens", proc.stdout)
 
     def test_cli_json_output_cyclonedx_15(self):
         with tempfile.TemporaryDirectory() as temp_dir:
