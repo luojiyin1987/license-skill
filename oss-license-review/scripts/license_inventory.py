@@ -64,6 +64,7 @@ HIGH_COPYLEFT_LICENSES = {
     "GPL-3.0-ONLY",
     "GPL-3.0-OR-LATER",
 }
+NO_LICENSE_GRANT_TOKENS = {"UNLICENSED", "UNLICENCED", "PROPRIETARY"}
 
 USE_CASES = ("unknown", "internal", "saas", "binary", "source")
 RISK_LEVEL_SCORE = {"low": 1, "medium": 2, "high": 3}
@@ -559,6 +560,10 @@ def has_any_token(tokens: set[str], candidates: set[str]) -> bool:
     return bool(tokens & candidates)
 
 
+def has_no_license_grant(tokens: set[str]) -> bool:
+    return has_any_token(tokens, NO_LICENSE_GRANT_TOKENS)
+
+
 def assess_risk(
     detected_ids: list[str],
     manifests: list[dict],
@@ -621,7 +626,13 @@ def assess_risk(
         )
 
     overall_risk = max(risk_candidates, key=lambda x: RISK_LEVEL_SCORE[x]) if risk_candidates else classify_tokens_risk(tokens)
-    if overall_risk == "high":
+    if has_no_license_grant(tokens):
+        overall_risk = "high"
+        reasons = [
+            "Detected an explicit no-license-grant marker such as UNLICENSED or PROPRIETARY.",
+            "Do not reuse, redistribute, or ship the code without separate permission from the rightsholder.",
+        ]
+    elif overall_risk == "high":
         reasons = [
             "Detected high-risk license obligations or unresolved expression uncertainty.",
             "Check distribution and SaaS scenarios before reusing or shipping code.",
@@ -658,7 +669,7 @@ def assess_risk(
 
 
 def build_required_actions(tokens: set[str], use_case: str, modified: bool) -> list[str]:
-    if not tokens:
+    if not tokens or has_no_license_grant(tokens):
         return [
             "Do not reuse code until a valid license grant is confirmed.",
             "Ask maintainers for explicit license terms or written permission.",
@@ -715,6 +726,10 @@ def build_restrictions(
     notes = []
     if not tokens:
         notes.append("No clear license grant detected; usage rights are uncertain.")
+    if has_no_license_grant(tokens):
+        notes.append(
+            "The project declares UNLICENSED/PROPRIETARY-style terms; treat usage rights as withheld unless you have separate permission."
+        )
     if high_copyleft_alerts:
         notes.append(
             "Strong copyleft may conflict with closed-source distribution plans."

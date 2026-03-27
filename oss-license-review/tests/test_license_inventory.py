@@ -217,6 +217,33 @@ class LicenseInventoryTests(unittest.TestCase):
             self.assertEqual(report["risk_level"], "high")
             self.assertIn("GPL-3.0-ONLY", report["high_copyleft_alerts"])
 
+    def test_unlicensed_marker_blocks_reuse_guidance(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo = Path(temp_dir)
+            (repo / "package.json").write_text(
+                json.dumps({"license": "UNLICENSED"}), encoding="utf-8"
+            )
+
+            report = li.build_report(repo, use_case="binary", modified=False)
+
+            self.assertEqual(report["risk_level"], "high")
+            self.assertTrue(
+                any("no-license-grant marker" in reason for reason in report["risk_reasons"])
+            )
+            self.assertEqual(
+                report["required_actions"],
+                [
+                    "Do not reuse code until a valid license grant is confirmed.",
+                    "Ask maintainers for explicit license terms or written permission.",
+                ],
+            )
+            self.assertTrue(
+                any(
+                    "usage rights as withheld" in note
+                    for note in report["restrictions_and_conflicts"]
+                )
+            )
+
 
 if __name__ == "__main__":
     unittest.main()
