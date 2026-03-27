@@ -902,6 +902,7 @@ def parse_package_lock(path: Path) -> dict:
     except Exception:
         return {}
     counter = Counter()
+    license_values: list[str] = []
     packages = data.get("packages")
     if isinstance(packages, dict):
         for meta in packages.values():
@@ -909,7 +910,9 @@ def parse_package_lock(path: Path) -> dict:
                 continue
             lic = meta.get("license")
             if isinstance(lic, str) and lic.strip():
-                counter[lic.strip()] += 1
+                normalized = lic.strip()
+                counter[normalized] += 1
+                license_values.append(normalized)
     if not counter:
         deps = data.get("dependencies", {})
         if isinstance(deps, dict):
@@ -918,11 +921,14 @@ def parse_package_lock(path: Path) -> dict:
                     continue
                 lic = meta.get("license")
                 if isinstance(lic, str) and lic.strip():
-                    counter[lic.strip()] += 1
+                    normalized = lic.strip()
+                    counter[normalized] += 1
+                    license_values.append(normalized)
     if not counter:
         return {}
     return {
         "dependency_license_counts": dict(counter.most_common(20)),
+        "dependency_license_values": unique_keep_order(license_values),
         "unique_dependency_licenses": len(counter),
     }
 

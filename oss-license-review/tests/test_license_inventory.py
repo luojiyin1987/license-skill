@@ -195,6 +195,28 @@ class LicenseInventoryTests(unittest.TestCase):
             self.assertEqual(declared["parse_mode"], "full")
             self.assertEqual(declared["bom_format"], "CycloneDX")
 
+    def test_package_lock_license_hints_affect_risk(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo = Path(temp_dir)
+            package_lock = {
+                "packages": {
+                    "": {"license": "MIT"},
+                    "node_modules/copyleft-lib": {"license": "GPL-3.0-only"},
+                }
+            }
+            (repo / "package-lock.json").write_text(
+                json.dumps(package_lock), encoding="utf-8"
+            )
+
+            report = li.build_report(repo, use_case="binary", modified=False)
+
+            manifest_types = {item["type"] for item in report["manifest_declarations"]}
+            self.assertIn("package-lock.json", manifest_types)
+            declared = report["manifest_declarations"][0]["declared"]
+            self.assertIn("GPL-3.0-only", declared["dependency_license_values"])
+            self.assertEqual(report["risk_level"], "high")
+            self.assertIn("GPL-3.0-ONLY", report["high_copyleft_alerts"])
+
 
 if __name__ == "__main__":
     unittest.main()
