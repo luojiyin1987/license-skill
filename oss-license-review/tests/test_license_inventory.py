@@ -244,6 +244,32 @@ class LicenseInventoryTests(unittest.TestCase):
                 )
             )
 
+    def test_pom_license_name_is_normalized_to_spdx(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo = Path(temp_dir)
+            (repo / "pom.xml").write_text(
+                """
+                <project>
+                  <licenses>
+                    <license>
+                      <name>The Apache Software License, Version 2.0</name>
+                      <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+                    </license>
+                  </licenses>
+                </project>
+                """,
+                encoding="utf-8",
+            )
+
+            report = li.build_report(repo, use_case="binary", modified=False)
+
+            declared = report["manifest_declarations"][0]["declared"]
+            self.assertIn("APACHE-2.0", declared["licenses"])
+            self.assertEqual(report["risk_level"], "low")
+            self.assertTrue(
+                any("NOTICE handling" in note for note in report["restrictions_and_conflicts"])
+            )
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -194,6 +194,28 @@ LICENSE_TEXT_PATTERNS = [
     ("MPL-2.0", re.compile(r"mozilla public license.*2\.0", re.IGNORECASE | re.DOTALL)),
     ("EPL", re.compile(r"eclipse public license", re.IGNORECASE)),
 ]
+LICENSE_REFERENCE_PATTERNS = [
+    ("AGPL-3.0", re.compile(r"affero.*general public license|agpl", re.IGNORECASE)),
+    (
+        "LGPL-2.1",
+        re.compile(r"(lesser|library)\s+general public license.*2\.1|lgpl[-\s]*2\.1", re.IGNORECASE),
+    ),
+    (
+        "LGPL-3.0",
+        re.compile(r"(lesser|library)\s+general public license.*3\.0|lgpl[-\s]*3\.0", re.IGNORECASE),
+    ),
+    ("LGPL", re.compile(r"(lesser|library)\s+general public license|lgpl", re.IGNORECASE)),
+    ("GPL-2.0", re.compile(r"general public license.*2\.0|gpl[-\s]*2\.0", re.IGNORECASE)),
+    ("GPL-3.0", re.compile(r"general public license.*3\.0|gpl[-\s]*3\.0", re.IGNORECASE)),
+    ("GPL", re.compile(r"general public license|\bgpl\b", re.IGNORECASE)),
+    ("APACHE-2.0", re.compile(r"apache.*2\.0|apache.org/licenses/license-2.0", re.IGNORECASE)),
+    ("MIT", re.compile(r"\bmit\b|opensource.org/licenses/mit", re.IGNORECASE)),
+    ("BSD-3-CLAUSE", re.compile(r"bsd.*3|opensource.org/licenses/bsd-3-clause", re.IGNORECASE)),
+    ("BSD-2-CLAUSE", re.compile(r"bsd.*2|opensource.org/licenses/bsd-2-clause", re.IGNORECASE)),
+    ("MPL-2.0", re.compile(r"mozilla public license.*2\.0|mozilla.org/.*/mpl/2.0", re.IGNORECASE)),
+    ("EPL-2.0", re.compile(r"eclipse public license.*2\.0|eclipse.org/.*/epl-2.0", re.IGNORECASE)),
+    ("EPL", re.compile(r"eclipse public license|\bepl\b", re.IGNORECASE)),
+]
 
 
 def normalize_license_token(token: str) -> str:
@@ -798,6 +820,13 @@ def guess_license_from_text(text: str) -> str | None:
     return None
 
 
+def guess_license_from_reference(value: str) -> str | None:
+    for license_id, pattern in LICENSE_REFERENCE_PATTERNS:
+        if pattern.search(value):
+            return license_id
+    return None
+
+
 def scan_license_files(repo: Path) -> tuple[list[dict], list[str]]:
     findings: list[dict] = []
     detected = Counter()
@@ -907,6 +936,16 @@ def parse_pom_xml(path: Path) -> dict:
         out["license_names"] = names
     if urls:
         out["license_urls"] = urls
+    normalized = unique_keep_order(
+        [
+            guessed
+            for value in names + urls
+            for guessed in [guess_license_from_reference(value)]
+            if guessed
+        ]
+    )
+    if normalized:
+        out["licenses"] = normalized
     return out
 
 
