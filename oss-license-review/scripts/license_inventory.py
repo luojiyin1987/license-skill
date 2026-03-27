@@ -48,6 +48,13 @@ SPDX_EXPR_TOKEN_RE = re.compile(
 )
 SPDX_OPERATOR_TOKENS = {"AND", "OR", "WITH"}
 SBOM_FILE_NAMES = {"sbom.json", "bom.json", "cyclonedx.json", "spdx.json"}
+PRIMARY_LICENSE_MANIFEST_TYPES = {
+    "package.json",
+    "pyproject.toml",
+    "Cargo.toml",
+    "composer.json",
+    "pom.xml",
+}
 
 LOW_RISK_LICENSES = {"MIT", "BSD-2-CLAUSE", "BSD-3-CLAUSE", "ISC", "APACHE-2.0"}
 MEDIUM_RISK_LICENSES = {"MPL-2.0", "LGPL", "LGPL-2.1", "LGPL-3.0", "EPL", "EPL-2.0"}
@@ -1171,12 +1178,30 @@ def collect_manifests(repo: Path) -> list[dict]:
     return findings
 
 
+def guess_primary_license_from_manifests(manifests: list[dict]) -> str | None:
+    for item in manifests:
+        if item.get("type") not in PRIMARY_LICENSE_MANIFEST_TYPES:
+            continue
+        declared = item.get("declared", {})
+        for key in ("license", "license_text"):
+            value = declared.get(key)
+            if isinstance(value, str) and value.strip():
+                return value.strip()
+        for key in ("licenses", "license_names"):
+            values = declared.get(key)
+            if isinstance(values, list):
+                for value in values:
+                    if isinstance(value, str) and value.strip():
+                        return value.strip()
+    return None
+
+
 def build_report(repo: Path, use_case: str, modified: bool) -> dict:
     license_files, detected_ids = scan_license_files(repo)
     manifests = collect_manifests(repo)
     spdx_expressions = collect_spdx_expressions(detected_ids, manifests)
     spdx_evaluations = collect_spdx_evaluations(detected_ids, manifests)
-    primary = detected_ids[0] if detected_ids else None
+    primary = detected_ids[0] if detected_ids else guess_primary_license_from_manifests(manifests)
     risk_level, risk_reasons, high_copyleft_alerts, tokens = assess_risk(
         detected_ids, manifests, use_case, spdx_expressions, spdx_evaluations
     )

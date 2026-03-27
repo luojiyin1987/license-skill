@@ -270,6 +270,17 @@ class LicenseInventoryTests(unittest.TestCase):
                 any("NOTICE handling" in note for note in report["restrictions_and_conflicts"])
             )
 
+    def test_primary_license_guess_falls_back_to_project_manifest(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo = Path(temp_dir)
+            (repo / "package.json").write_text(
+                json.dumps({"license": "MIT"}), encoding="utf-8"
+            )
+
+            report = li.build_report(repo, use_case="binary", modified=False)
+
+            self.assertEqual(report["primary_license_guess"], "MIT")
+
 
 if __name__ == "__main__":
     unittest.main()
